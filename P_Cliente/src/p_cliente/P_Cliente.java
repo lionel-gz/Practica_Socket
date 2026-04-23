@@ -1,4 +1,3 @@
-
 package p_cliente;
 
 import java.io.*;
@@ -7,41 +6,44 @@ import java.util.Scanner;
 import java.time.LocalTime;
 
 public class P_Cliente{
-    public static void main(String[] args) {
-        try {
-            Socket socket = new Socket("localhost", 5000);
+    
+    public static void main(String[] args) throws IOException {
+        Scanner s = new Scanner(System.in);
 
-            BufferedReader entrada = new BufferedReader(
+        Socket socket = new Socket("localhost", 5000);
+
+        BufferedReader entrada = new BufferedReader(
                 new InputStreamReader(socket.getInputStream())
-            );
+        );
 
-            PrintWriter salida = new PrintWriter(
+        PrintWriter salida = new PrintWriter(
                 socket.getOutputStream(), true
-            );
+        );
 
-            Scanner s = new Scanner(System.in);
-
-            String mensaje;
-
-            while (true) {
-                System.out.print("Escribí un mensaje: ");
-                mensaje = s.nextLine();
-
-                salida.println(mensaje);
-
-                String respuesta = entrada.readLine();
-                System.out.println("Servidor: " + respuesta);
-
-                if (mensaje.equalsIgnoreCase("salir")) {
-                    break;
+        new Thread(() -> {
+            try {
+                String respuesta;
+                while ((respuesta = entrada.readLine()) != null) {
+                    System.out.println(respuesta);
                 }
+            } catch (IOException e) {
+                System.out.println("Conexión cerrada");
             }
+        }).start();
 
-            socket.close();
-            System.out.println("Cliente desconectado");
+        
+        while (true) {
+            
+            System.out.print(">");
+            String mensaje = s.nextLine();
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            salida.println(mensaje);
+
+            if (mensaje.equalsIgnoreCase("salir")) {
+                break;
+            }
         }
+        
+        
     }
 }
