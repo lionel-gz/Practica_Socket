@@ -3,47 +3,57 @@ package p_cliente;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
-import java.time.LocalTime;
 
-public class P_Cliente{
-    
-    public static void main(String[] args) throws IOException {
-        Scanner s = new Scanner(System.in);
+public class P_Cliente {
 
-        Socket socket = new Socket("localhost", 5000);
+    public static void main(String[] args) {
+        try {
+            Socket socket = new Socket("localhost", 5000);
 
-        BufferedReader entrada = new BufferedReader(
-                new InputStreamReader(socket.getInputStream())
-        );
+            BufferedReader entrada = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream())
+            );
+            PrintWriter salida = new PrintWriter(
+                    socket.getOutputStream(), true
+            );
 
-        PrintWriter salida = new PrintWriter(
-                socket.getOutputStream(), true
-        );
-
-        new Thread(() -> {
-            try {
-                String respuesta;
-                while ((respuesta = entrada.readLine()) != null) {
-                    System.out.println(respuesta);
+            // ── Hilo receptor: muestra mensajes del servidor en cualquier momento ──
+            Thread receptor = new Thread(() -> {
+                try {
+                    String mensaje;
+                    while ((mensaje = entrada.readLine()) != null) {
+                        System.out.println(mensaje);
+                    }
+                } catch (IOException e) {
+                    System.out.println("[CLIENTE] Conexión con el servidor cerrada.");
                 }
-            } catch (IOException e) {
-                System.out.println("Conexión cerrada");
+            });
+            receptor.setDaemon(true);
+            receptor.start();
+
+            // ── Hilo principal: lectura desde consola y envío al servidor ──────────
+            Scanner scanner = new Scanner(System.in);
+            String mensaje;
+
+            while (true) {
+                mensaje = scanner.nextLine();
+
+                if (mensaje == null || mensaje.trim().isEmpty()) continue;
+
+                salida.println(mensaje);
+
+                if (mensaje.equalsIgnoreCase("SALIR")) {
+                    break;
+                }
             }
-        }).start();
 
-        
-        while (true) {
-            
-            System.out.print(">");
-            String mensaje = s.nextLine();
+            socket.close();
+            System.out.println("[CLIENTE] Desconectado.");
 
-            salida.println(mensaje);
-
-            if (mensaje.equalsIgnoreCase("salir")) {
-                break;
-            }
+        } catch (ConnectException e) {
+            System.out.println("[ERROR] No se pudo conectar al servidor. ¿Está iniciado?");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        
-        
     }
 }
